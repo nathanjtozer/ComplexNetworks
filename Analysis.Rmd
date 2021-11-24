@@ -1,0 +1,77 @@
+```{r}
+library(LaplacesDemon)
+load('s2m2prob_500.RData')
+load('s2m3prob_500.RData')
+load('s3m3prob_500.RData')
+load('s2m2time_500.RData')
+load('s2m3time_500.RData')
+load('s3m3time_500.RData')
+
+m2s2.prob.data<-cv.prob.data
+m2s2.time.data<-cv.time.data
+rm(cv.prob.data)
+rm(cv.time.data)
+
+Ns <- seq(10,100,by=10)
+alphas <- seq(0.5,1,by=0.05)
+alphas2 <- seq(0.5,1,by=0.01)
+```
+
+```{r}
+m2s2.error.probs <- 1-m2s2.prob.data
+m3s2.error.probs <- 1-m3s2.prob.data
+m3s3.error.probs <- 1-m3s3.prob.data
+```
+
+```{r}
+kld <- function(a){
+  return(a*log2(2*a)+(1-a)*log2(2*(1-a)))
+}
+```
+
+```{r}
+png('ErrorProbability.png',width=640, height=480)
+par(mfrow=c(2,2))
+plot(alphas, m2s2.error.probs[10,],ylim=c(0,0.5), main='Classical Voter',xlab=expression(alpha),ylab='Error Probability',lwd=2)
+lines(alphas2,1-alphas2,lwd=2,col='red')
+
+plot(alphas,m3s2.error.probs[10,],main='Ternary Memory & Binary Signals',xlab=expression(alpha),ylab='Error Probability',lwd=2)
+lines(alphas2,1-alphas2,lwd=2,col='red')
+lines(alphas2,exp(-Ns[10]*(1-2*alphas2*(1-log(2*alphas2)))),lwd=2,col='red')
+
+
+plot(alphas,m3s3.error.probs[10,],main='Ternary Memory & Signals',xlab=expression(alpha),ylab='Error Probability',lwd=2)
+lines(alphas2,c(2^(-Ns[10]*kld(alphas2[1:50])),0),lwd=2,col='red')
+
+plot(alphas, 1-alphas,ylim=c(0,0.5), type='l',main='Combined',xlab=expression(alpha),ylab='Error Probability',lwd=2,col='orange')
+lines(alphas,m3s2.error.probs[10,],lwd=2,col='darkgreen')
+lines(alphas,m3s3.error.probs[10,],lwd=2,col='blue')
+dev.off()
+```
+
+
+```{r}
+png('ConsensusTime.png',width=640, height=480)
+par(mfrow=c(2,2))
+plot(Ns, m2s2.time.data[,8],ylim=c(0,100),main='Classical Voter',ylab='Average Consensus Time',xlab='N: No. of Nodes',lwd=2)
+lines(Ns,Ns-1,lwd=2,col='red')
+
+plot(Ns, m3s2.time.data[,8],ylim=c(4,15),main='Ternary Memory & Binary Signals',ylab='Average Consensus Time',xlab='N: No. of Nodes',lwd=2)
+lines(Ns,2*log(Ns),lwd=2,col='red')
+lines(Ns,3*log(Ns),lwd=2,col='red')
+
+
+plot(Ns, m3s3.time.data[,8],ylim=c(2,10),main='Ternary Memory & Signals',ylab='Average Consensus Time',xlab='N: No. of Nodes',lwd=2)
+lines(Ns,log(Ns),lwd=2,col='red')
+lines(Ns,2*log(Ns),lwd=2,col='red')
+
+plot(predict(loess(m2s2.time.data[,8]~Ns)), type='l',ylim=c(0,45),xaxt='n',main='Combined',ylab='Average Consensus Time',xlab='N: No. of Nodes',lwd=2,col='orange')
+lines(predict(loess(m3s2.time.data[,8]~Ns)), type='l',lwd=2,col='darkgreen')
+lines(predict(loess(m3s3.time.data[,8]~Ns)), type='l',lwd=2,col='blue')
+axis(1,at=seq(2,10,by=2),labels=seq(20,100,by=20))
+dev.off()
+```
+
+```{r}
+alphas[8]
+```

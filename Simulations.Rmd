@@ -1,0 +1,210 @@
+```{r}
+classic.voter <- function(N,alpha){
+  
+k <- round(N*alpha)
+x0 <- sample(c(rep(0,N-k),rep(1,k)))
+T <- 1e6
+X <- matrix(rep(NA,N*(T+1)),nrow=T+1,ncol=N)
+X[1,] <- x0
+time <- 0
+converge <- 'no'
+
+for(t in 1:T){
+  
+  if (sum(X[t,])==N){
+    converge <- 1
+    break
+  } else if (sum(X[t,])==0){
+    converge <- 0
+    break
+  }
+  
+  node.pps <- rexp(N,rate=1)
+  i <- which(node.pps==min(node.pps))
+  time <- time + min(node.pps)
+  j <- sample((1:N),1, replace=TRUE)
+  X[t+1,] <- X[t,]
+  
+  if (X[t,i]!=X[t,j]){
+    X[t+1,i] <- X[t,j]
+  }
+}
+  
+return(c(time,converge))
+}
+
+classic.voter.avg <- function(N,alpha,M){
+  total.time <- 0
+  no.1.consensus <- 0
+  
+  for (i in 1:M){
+    total.time <- total.time + classic.voter(N,alpha)[1]
+    no.1.consensus <- no.1.consensus + classic.voter(N,alpha)[2]
+  }
+  
+  return(c(total.time/M, no.1.consensus/M))
+}
+```
+
+```{r}
+m3s3 <- function(N,alpha){
+
+k1 <- round(alpha*(N-sqrt(N)))
+k0 <- round((1-alpha)*(N-sqrt(N)))
+ke <- N-k0-k1
+
+x0 <- sample(c(rep(0,k0),rep(N+1,ke),rep(1,k1)))
+T <- 1e6
+X <- matrix(rep(NA,N*(T+1)),nrow=T+1,ncol=N)
+X[1,] <- x0
+time <- 0
+converge <- 'no'
+
+for(t in 1:T){
+  
+  if (sum(X[t,])==N){
+    converge <- 1
+    break
+  } else if (sum(X[t,])==0){
+    converge <- 0
+    break
+  }
+  
+  node.pps <- rexp(N,rate=1)
+  i <- which(node.pps==min(node.pps))
+  time <- time + min(node.pps)
+  j <- sample((1:N),1, replace=TRUE)
+  X[t+1,] <- X[t,]
+  
+  if (X[t,i]==0&X[t,j]==1){
+    X[t+1,i] <- N+1
+  } else if (X[t,i]==1&X[t,j]==0){
+    X[t+1,i] <- N+1
+  } else if (X[t,i]==N+1){
+    X[t+1,i] <- X[t,j]
+  }
+}
+
+return(c(time,converge))
+}
+
+m3s3.avg <- function(N,alpha,M){
+  total.time <- 0
+  no.1.consensus <- 0
+  
+  for (i in 1:M){
+    total.time <- total.time + m3s3(N,alpha)[1]
+    no.1.consensus <- no.1.consensus + m3s3(N,alpha)[2]
+  }
+  
+  return(c(total.time/M, no.1.consensus/M))
+}
+```
+
+```{r}
+m3s2 <- function(N,alpha){
+
+k1 <- round(alpha*(N-sqrt(N)))
+k0 <- round((1-alpha)*(N-sqrt(N)))
+ke <- N-k0-k1
+
+x0 <- sample(c(rep(0,k0),rep(N+1,ke),rep(1,k1)))
+T <- 1e6
+X <- matrix(rep(NA,N*(T+1)),nrow=T+1,ncol=N)
+X[1,] <- x0
+time <- 0
+converge <- 'no'
+
+for(t in 1:T){
+  
+  if (sum(X[t,])==N){
+    converge <- 1
+    break
+  } else if (sum(X[t,])==0){
+    converge <- 0
+    break
+  }
+  
+  node.pps <- rexp(N,rate=1)
+  i <- which(node.pps==min(node.pps))
+  time <- time + min(node.pps)
+  j <- sample((1:N),1, replace=TRUE)
+  X[t+1,] <- X[t,]
+  j.opinion <- sample(c(0,1),1)
+  
+  if (X[t,i]==0&X[t,j]==1){
+    X[t+1,i] <- N+1
+  } else if (X[t,i]==0&X[t,j]==N+1){
+    X[t+1,i] <- ifelse(j.opinion==1,N+1,0)
+  } else if (X[t,i]==N+1&X[t,j]!=N+1){
+    X[t+1,i] <- X[t,j]
+  } else if (X[t,i]==N+1&X[t,j]==N+1){
+    X[t+1,i] <- j.opinion
+  } else if (X[t,i]==1&X[t,j]==0){
+    X[t+1,i] <- N+1
+  } else if (X[t,i]==1&X[t,j]==N+1){
+    X[t+1,i] <- ifelse(j.opinion==0,N+1,1)
+  }
+  
+  
+}
+
+return(c(time,converge))
+}
+
+m3s2.avg <- function(N,alpha,M){
+  total.time <- 0
+  no.1.consensus <- 0
+  
+  for (i in 1:M){
+    total.time <- total.time + m3s2(N,alpha)[1]
+    no.1.consensus <- no.1.consensus + m3s2(N,alpha)[2]
+  }
+  
+  return(c(total.time/M, no.1.consensus/M))
+}
+```
+
+```{r}
+#classic.voter.avg(10,0.6,1000)
+#m3s3.avg(10,0.6,1000)
+#m3s2.avg(10,0.6,1000)
+```
+
+
+```{r}
+Ns <- seq(10,100,by=10)
+alphas <- seq(0.5,1,by=0.05)
+cv.prob.data <- matrix(rep(NA,110),nrow=10,ncol=11)
+cv.time.data <- matrix(rep(NA,110),nrow=10,ncol=11)
+m3s3.prob.data <- matrix(rep(NA,110),nrow=10,ncol=11)
+m3s3.time.data <- matrix(rep(NA,110),nrow=10,ncol=11)
+m3s2.prob.data <- matrix(rep(NA,110),nrow=10,ncol=11)
+m3s2.time.data <- matrix(rep(NA,110),nrow=10,ncol=11)
+```
+
+```{r}
+for (i in 5:10){
+  for (j in 1:11){
+    print(c(i,j))
+    temp <- classic.voter.avg(Ns[i],alphas[j],5e2)
+    cv.time.data[i,j] <- temp[1]
+    cv.prob.data[i,j] <- temp[2]
+    temp <- m3s3.avg(Ns[i],alphas[j],5e2)
+    m3s3.time.data[i,j] <- temp[1]
+    m3s3.prob.data[i,j] <- temp[2]
+    temp <- m3s2.avg(Ns[i],alphas[j],5e2)
+    m3s2.time.data[i,j] <- temp[1]
+    m3s2.prob.data[i,j] <- temp[2]
+  }
+}
+```
+
+```{r}
+save(cv.prob.data,file="s2m2prob_500.RData")
+save(cv.time.data,file="s2m2time_500.RData")
+save(m3s2.prob.data,file="s3m2prob_500.RData")
+save(m3s2.time.data,file="s3m2time_500.RData")
+save(m3s3.prob.data,file="s3m3prob_500.RData")
+save(m3s3.time.data,file="s3m3time_500.RData")
+```
